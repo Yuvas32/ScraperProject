@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
-const preURL = "http://localhost:3001/";
+const preURL = "http://localhost:3001";
 
 const App = () => {
   const [users, setUsers] = useState([]);
   const [msg, setMsg] = useState("");
 
+  // Optional: welcome message
+  useEffect(() => {
+    fetch(`${preURL}/test`)
+      .then((res) => res.json())
+      .then((data) => setMsg(data.message))
+      .catch((err) => console.error("Error fetching message:", err));
+  }, []);
+
   // ✅ This is where you insert the debug-friendly fetch block
   useEffect(() => {
-    fetch(`${preURL}users`)
+    fetch(`${preURL}/users`)
       .then((res) => {
         console.log("Response status:", res.status); // log HTTP status
         return res.json();
@@ -17,14 +25,6 @@ const App = () => {
         setUsers(data); // update React state
       })
       .catch((err) => console.error("Error fetching users:", err));
-  }, []);
-
-  // Optional: welcome message
-  useEffect(() => {
-    fetch(`${preURL}test`)
-      .then((res) => res.json())
-      .then((data) => setMsg(data.message))
-      .catch((err) => console.error("Error fetching message:", err));
   }, []);
 
   return (
