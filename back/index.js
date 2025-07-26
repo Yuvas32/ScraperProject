@@ -1,24 +1,24 @@
-const express = require("express");
-const cors = require("cors");
-const mysql = require("mysql2");
+import express from "express";
+import cors from "cors";
+import mysql from "mysql2";
+import dotenv from "dotenv";
+
+import { workerRoutes } from "./routes"; // must add `.js` if using modules
+
+dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 3001;
-const dotenv = require("dotenv");
-const router = express.Router();
 
-// Middlewares
+// ✅ Middleware
 app.use(cors());
 app.use(express.json());
 
-const workerRoutes = require("./routes/workerRoutes");
-dotenv.config();
-app.use("/api/workers", workerRoutes);
-
-// ✅ Connect to MySQL FIRST (safe to do early)
+// ✅ Connect to MySQL
 const connection = mysql.createConnection({
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "", // ✅ empty string
+  password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "test_project",
 });
 
@@ -27,8 +27,9 @@ connection.connect((err) => {
   console.log("✅ Connected to MySQL");
 });
 
+// ✅ Routes
+app.use("/api/workers", workerRoutes);
 
-// ✅ Routes (define each route ONCE) - check working Backend
 app.get("/test", (req, res) => {
   res.json({ message: "Hello from the backend!" });
 });
@@ -44,10 +45,7 @@ app.get("/users", (req, res) => {
   });
 });
 
-// router.get("/", workerController.getAllWorkers); // GET /api/workers
-// router.post("/", workerController.createWorker); // POST /api/workers
-
-// ✅ Start the server LAST
+// ✅ Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
