@@ -1,51 +1,46 @@
 import { useEffect, useState } from "react";
+import DataTable from "./Components/DataTable";
+
 const preURL = "http://localhost:3001";
+
+const fetchUsers = async () => {
+  const res = await fetch(`${preURL}/users`);
+  if (!res.ok) throw new Error("Failed to fetch users");
+  return await res.json();
+};
+
+const fetchWelcomeMessage = async () => {
+  const res = await fetch(`${preURL}/test`);
+  if (!res.ok) throw new Error("Failed to fetch welcome message");
+  const data = await res.json();
+  return data.message;
+};
 
 const App = () => {
   const [users, setUsers] = useState([]);
   const [msg, setMsg] = useState("");
 
-  // Optional: welcome message
   useEffect(() => {
-    fetch(`${preURL}/test`)
-      .then((res) => res.json())
-      .then((data) => setMsg(data.message))
+    fetchWelcomeMessage()
+      .then(setMsg)
       .catch((err) => console.error("Error fetching message:", err));
   }, []);
 
-  // ✅ This is where you insert the debug-friendly fetch block
   useEffect(() => {
-    fetch(`${preURL}/users`)
-      .then((res) => {
-        console.log("Response status:", res.status); // log HTTP status
-        return res.json();
-      })
+    fetchUsers()
       .then((data) => {
-        console.log("Fetched users:", data); // log the returned data
-        setUsers(data); // update React state
+        console.log("Fetched users:", data);
+        setUsers(data);
       })
       .catch((err) => console.error("Error fetching users:", err));
   }, []);
 
   return (
-    <div>
-      <h1>{msg || "Loading welcome message..."}</h1>
-
-      <h2>User List:</h2>
-      {users.length === 0 ? (
-        <p>Loading users...</p>
-      ) : (
-        <ul>
-          {users.map((user, idx) => (
-            <li key={idx}>
-              {user.name} —{" "}
-              <span style={{ color: user.active ? "green" : "red" }}>
-                {user.active ? "Active" : "Not Active"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="center-wrapper">
+      <div className="center-content">
+        <h1>{msg || "Loading welcome message..."}</h1>
+        <DataTable data={users} title="User Table" />
+      </div>
     </div>
   );
 };
