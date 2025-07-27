@@ -6,14 +6,15 @@ const styles = {
     textAlign: "center",
   },
   headerRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
+    position: "relative",
     marginBottom: "16px",
+    height: "40px",
   },
   title: {
     fontSize: "1.5rem",
     fontWeight: "bold",
+    margin: 0,
+    textAlign: "center",
   },
   loadingText: {
     color: "#777",
@@ -66,6 +67,9 @@ const styles = {
     cursor: "pointer",
   },
   smallButton: {
+    position: "absolute",
+    left: 0,
+    top: 0,
     padding: "6px 10px",
     fontSize: "13px",
     fontWeight: "bold",
@@ -156,8 +160,12 @@ const DataTable = ({
   const handleSubmit = () => {
     if (typeof add === "function") {
       add(formValues)
-        .then((newUser) => {
-          setTableData((prev) => [...prev, newUser]);
+        .then(() => {
+          if (typeof refresh === "function") {
+            return refresh().then(setTableData);
+          }
+        })
+        .then(() => {
           setFormValues({});
           setShowForm(false);
         })
@@ -181,7 +189,14 @@ const DataTable = ({
   if (!tableData || tableData.length === 0) {
     return (
       <div style={styles.wrapper}>
-        <h2 style={styles.title}>{title}</h2>
+        <div style={styles.headerRow}>
+          {refresh && (
+            <button style={styles.smallButton} onClick={handleRefresh}>
+              🔄
+            </button>
+          )}
+          <h2 style={styles.title}>{title}</h2>
+        </div>
         <p style={styles.loadingText}>Loading...</p>
       </div>
     );
@@ -192,12 +207,12 @@ const DataTable = ({
   return (
     <div style={styles.wrapper}>
       <div style={styles.headerRow}>
-        <h2 style={styles.title}>{title}</h2>
         {refresh && (
           <button style={styles.smallButton} onClick={handleRefresh}>
-            🔄 Refresh
+            🔄
           </button>
         )}
+        <h2 style={styles.title}>{title}</h2>
       </div>
 
       <div style={styles.container}>

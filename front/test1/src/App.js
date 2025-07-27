@@ -26,7 +26,7 @@ const App = () => {
           <h1>{msg || "Loading welcome message..."}</h1>
           <DataTable
             data={users}
-            title="User Table"
+            title="משתמשים"
             refresh={() =>
               fetchUsers()
                 .then(setUsers)
