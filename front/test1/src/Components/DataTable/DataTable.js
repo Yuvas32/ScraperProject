@@ -6,6 +6,8 @@ const DataTable = ({
   data = [],
   title = "Data Table",
   add = null,
+  edit = null,
+  deleteItem = null,
   refresh = null,
   tableName,
 }) => {
@@ -132,7 +134,7 @@ const DataTable = ({
                   {col.replace(/_/g, " ")}
                 </th>
               ))}
-              <th className="th">פעולות</th>
+              {(edit || deleteItem) && <th className="th">פעולות</th>}
             </tr>
           </thead>
           <tbody>
@@ -147,20 +149,26 @@ const DataTable = ({
                     {formatValue(col, row[col])}
                   </td>
                 ))}
-                <td className="td">
-                  <button
-                    className="edit-button"
-                    onClick={() => handleEdit(row)}
-                  >
-                    ✏ ערוך
-                  </button>
-                  <button
-                    className="delete-button"
-                    onClick={() => handleDelete(row.id)}
-                  >
-                    🗑 מחק
-                  </button>
-                </td>
+                {(edit || deleteItem) && (
+                  <td className="td">
+                    {edit && (
+                      <button
+                        className="edit-button"
+                        onClick={() => handleEdit(row)}
+                      >
+                        ✏ ערוך
+                      </button>
+                    )}
+                    {deleteItem && (
+                      <button
+                        className="delete-button"
+                        onClick={() => handleDelete(row.id)}
+                      >
+                        🗑 מחק
+                      </button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
