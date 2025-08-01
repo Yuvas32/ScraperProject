@@ -9,6 +9,7 @@ const Footer = () => {
         fontSize: "0.9rem",
         color: "#555",
         marginTop: "40px",
+        boxSizing: "border-box",
       }}
     >
       © {new Date().getFullYear()} My App. All rights reserved.

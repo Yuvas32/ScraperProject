@@ -8,6 +8,7 @@ const NavbarWithStyle = ({ children }) => (
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
+      boxSizing: "border-box",
     }}
   >
     {children}
