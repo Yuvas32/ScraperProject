@@ -53,6 +53,7 @@ const UsersPage = () => {
   return (
     <DataTable
       data={users}
+      tableName="users"
       title="משתמשים"
       refresh={refreshUsers}
       add={addUser}

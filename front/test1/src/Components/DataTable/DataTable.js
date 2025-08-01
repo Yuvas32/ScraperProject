@@ -7,6 +7,7 @@ const DataTable = ({
   title = "Data Table",
   add = null,
   refresh = null,
+  tableName,
 }) => {
   const [tableData, setTableData] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -31,8 +32,8 @@ const DataTable = ({
   const handleSubmit = () => {
     const method = editingId ? "PUT" : "POST";
     const url = editingId
-      ? `http://localhost:3001/users/${editingId}`
-      : `http://localhost:3001/users`;
+      ? `http://localhost:3001/${tableName}/${editingId}`
+      : `http://localhost:3001/${tableName}`;
 
     fetch(url, {
       method,
@@ -72,10 +73,10 @@ const DataTable = ({
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("האם אתה בטוח שברצונך למחוק את המשתמש?")) return;
+    if (!window.confirm("האם אתה בטוח שברצונך למחוק?")) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/users/${id}`, {
+      const res = await fetch(`http://localhost:3001/${tableName}/${id}`, {
         method: "DELETE",
       });
 
