@@ -11,4 +11,7 @@ router.post("/", userController.createUser);
 // DELETE user
 router.delete("/:id", userController.deleteUser);
 
+// עדכון משתמש לפי מזהה
+router.put("/:id", userController.updateUser);
+
 module.exports = router; // ✅ THIS LINE IS CRITICAL

@@ -43,3 +43,32 @@ exports.deleteUser = (req, res) => {
     res.json({ message: "User deleted successfully" });
   });
 };
+
+// UPDATE USER BY ID
+exports.updateUser = (req, res) => {
+  const id = req.params.id;
+
+  // עותק ללא created_at
+  const updatedData = { ...req.body };
+  delete updatedData.created_at;
+
+  const fields = Object.keys(updatedData)
+    .map((key) => `${key} = ?`)
+    .join(", ");
+  const values = Object.values(updatedData);
+
+  const sql = `UPDATE users SET ${fields} WHERE id = ?`;
+
+  db.query(sql, [...values, id], (err, result) => {
+    if (err) {
+      console.error("Error updating user:", err);
+      return res.status(500).json({ error: "Failed to update user" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json({ message: "User updated successfully" });
+  });
+};
