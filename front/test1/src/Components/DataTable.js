@@ -66,6 +66,16 @@ const styles = {
     borderRadius: "8px",
     cursor: "pointer",
   },
+  deleteButton: {
+    padding: "6px 10px",
+    fontSize: "12px",
+    fontWeight: "bold",
+    backgroundColor: "#e74c3c",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+  },
   smallButton: {
     position: "absolute",
     left: 0,
@@ -186,6 +196,27 @@ const DataTable = ({
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("האם אתה בטוח שברצונך למחוק את המשתמש?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:3001/users/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        if (typeof refresh === "function") {
+          const updated = await refresh();
+          setTableData(updated);
+        }
+      } else {
+        console.error("Failed to delete user");
+      }
+    } catch (err) {
+      console.error("Error deleting user:", err);
+    }
+  };
+
   if (!tableData || tableData.length === 0) {
     return (
       <div style={styles.wrapper}>
@@ -225,6 +256,7 @@ const DataTable = ({
                   {col.replace(/_/g, " ")}
                 </th>
               ))}
+              <th style={styles.th}>פעולות</th>
             </tr>
           </thead>
           <tbody>
@@ -239,6 +271,14 @@ const DataTable = ({
                     {formatValue(col, row[col])}
                   </td>
                 ))}
+                <td style={styles.td}>
+                  <button
+                    style={styles.deleteButton}
+                    onClick={() => handleDelete(row.id)}
+                  >
+                    🗑 מחק
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

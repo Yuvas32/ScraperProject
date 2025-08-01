@@ -28,6 +28,24 @@ const UsersPage = () => {
 
     return createdUser;
   };
+
+  const deleteUser = async (id) => {
+    try {
+      const res = await fetch(`http://localhost:3001/users/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete user");
+      }
+
+      const fresh = await fetchUsers();
+      setUsers(fresh);
+    } catch (err) {
+      console.error("Error deleting user:", err);
+    }
+  };
+
   const refreshUsers = () =>
     fetchUsers()
       .then(setUsers)
@@ -38,6 +56,7 @@ const UsersPage = () => {
       title="משתמשים"
       refresh={refreshUsers}
       add={addUser}
+      onDelete={deleteUser}
     />
   );
 };

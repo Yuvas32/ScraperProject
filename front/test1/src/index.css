@@ -36,3 +36,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #f8f9fa; /* 👈 this sets a subtle gray bg */
 }
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}

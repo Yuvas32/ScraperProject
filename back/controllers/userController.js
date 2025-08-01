@@ -29,3 +29,17 @@ exports.createUser = (req, res) => {
     });
   });
 };
+
+// DELETE user by ID
+exports.deleteUser = (req, res) => {
+  const userId = req.params.id;
+  const sql = `DELETE FROM users WHERE id = ?`;
+
+  db.query(sql, [userId], (err, result) => {
+    if (err) {
+      console.error("❌ MySQL DELETE error:", err);
+      return res.status(500).json({ error: "Failed to delete user" });
+    }
+    res.json({ message: "User deleted successfully" });
+  });
+};

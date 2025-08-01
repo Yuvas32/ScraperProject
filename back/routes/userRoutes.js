@@ -8,4 +8,7 @@ router.get("/", userController.getAllUsers);
 // POST new user
 router.post("/", userController.createUser);
 
+// DELETE user
+router.delete("/:id", userController.deleteUser);
+
 module.exports = router; // ✅ THIS LINE IS CRITICAL
