@@ -1,6 +1,7 @@
 const NavbarWithStyle = ({ children }) => (
   <nav
     style={{
+      width: "100%",
       backgroundColor: "#2c3e50",
       color: "white",
       padding: "1rem 2rem",
@@ -18,10 +19,12 @@ const getGreeting = () => {
 
   // ישראל היא UTC+3 (גם בקיץ)
   const israelHour = now.getUTCHours() + 3;
+  const msgTimeStamp =
+    israelHour < 12 ? "בוקר" : israelHour < 17 ? "צהריים" : "ערב";
 
-  if (israelHour < 12) return "בוקר טוב";
-  if (israelHour < 17) return "צהריים טובים";
-  return "ערב טוב";
+  return msgTimeStamp !== "צהריים"
+    ? `${msgTimeStamp} טוב`
+    : `${msgTimeStamp} טובים`;
 };
 
 const Dashboard = () => (
