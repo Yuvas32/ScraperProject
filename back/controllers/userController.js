@@ -72,3 +72,25 @@ exports.updateUser = (req, res) => {
     res.status(200).json({ message: "User updated successfully" });
   });
 };
+
+// LOGIN user by email + "name" as password
+exports.loginUser = (req, res) => {
+  const { email, password } = req.body;
+
+  const sql = "SELECT * FROM users WHERE email = ?";
+  db.query(sql, [email], (err, results) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+
+    if (results.length === 0) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const user = results[0];
+
+    if (user.name !== password) {
+      return res.status(403).json({ error: "Incorrect password" });
+    }
+
+    res.json({ id: user.id, name: user.name, email: user.email });
+  });
+};

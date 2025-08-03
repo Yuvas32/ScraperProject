@@ -11,7 +11,10 @@ router.post("/", userController.createUser);
 // DELETE user
 router.delete("/:id", userController.deleteUser);
 
-// עדכון משתמש לפי מזהה
+// UPDATE user
 router.put("/:id", userController.updateUser);
 
-module.exports = router; // ✅ THIS LINE IS CRITICAL
+// ✅ LOGIN route
+router.post("/login", userController.loginUser);
+
+module.exports = router;

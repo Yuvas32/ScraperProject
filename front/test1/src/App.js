@@ -1,17 +1,47 @@
 import { useState, useEffect } from "react";
-import { HomePage, UsersPage } from "./pages";
+import { HomePage, UsersPage, LoginPage } from "./pages";
 import { Navbar, Footer } from "./components";
 
 const App = () => {
   const [page, setPage] = useState("home");
+  const [user, setUser] = useState(null);
+  const [loginTime, setLoginTime] = useState(null);
 
-  // קביעת העמוד לפי URL בזמן טעינה
+  // קריאה מ-localStorage בהעלאה
   useEffect(() => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    const savedLoginTime = localStorage.getItem("loginTime");
+
+    if (savedUser && savedLoginTime) {
+      const expireAt = new Date(savedLoginTime);
+      expireAt.setDate(expireAt.getDate() + 60);
+
+      if (new Date() < expireAt) {
+        setUser(savedUser);
+        setLoginTime(new Date(savedLoginTime));
+      } else {
+        localStorage.clear();
+      }
+    }
+
     const path = window.location.pathname.replace("/", "");
     setPage(path || "home");
   }, []);
 
-  // ניווט + עדכון ה-URL
+  const handleLogin = (userData) => {
+    const now = new Date();
+    setUser(userData);
+    setLoginTime(now);
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("loginTime", now.toISOString());
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setLoginTime(null);
+    localStorage.clear();
+  };
+
   const navigate = (targetPage) => {
     setPage(targetPage);
     window.history.pushState(
@@ -21,9 +51,16 @@ const App = () => {
     );
   };
 
+  if (!user) return <LoginPage onLogin={handleLogin} />;
+
   return (
     <>
-      <Navbar navigate={navigate} />
+      <Navbar
+        navigate={navigate}
+        onLogout={handleLogout}
+        user={user}
+        loginTime={loginTime}
+      />
       {page === "home" && <HomePage />}
       {page === "users" && <UsersPage />}
       <Footer />
