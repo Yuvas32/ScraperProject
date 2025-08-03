@@ -1,7 +1,14 @@
 const preURL = "http://localhost:3001";
 
 export const fetchUsers = async () => {
-  const res = await fetch(`${preURL}/users`);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  const res = await fetch(`${preURL}/users`, {
+    headers: {
+      "x-user-role": user.role || "",
+    },
+  });
+
   if (!res.ok) throw new Error("Failed to fetch users");
   return await res.json();
 };

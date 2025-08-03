@@ -7,6 +7,16 @@ export const formatValue = (key, value) => {
     );
   }
 
+  if (key === "role") {
+    const display = value === "admin" ? "מנהל" : "רגיל";
+    const emoji = value === "admin" ? "👔" : "👕";
+    return (
+      <span title={display}>
+        {emoji} {display}
+      </span>
+    );
+  }
+
   if (
     key.includes("date") ||
     key.includes("created_at") ||

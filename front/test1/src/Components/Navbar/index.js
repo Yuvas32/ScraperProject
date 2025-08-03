@@ -1,18 +1,7 @@
 import { Dashboard, NavbarWithStyle, StyledNavBtn } from "./components";
+import { formatLastLoginTime } from "./functions";
 
-// ✅ נוסיף user ו־loginTime כ־props
 const Navbar = ({ navigate, onLogout, user, loginTime }) => {
-  const formatNextLoginTime = () => {
-    if (!loginTime) return "";
-    const next = new Date(loginTime);
-    next.setDate(next.getDate() + 60);
-    return `${next.toLocaleDateString()} ${next.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false, // ✅ פורמט 24 שעות
-    })}`;
-  };
-
   return (
     <NavbarWithStyle>
       {/* צד שמאל – ניווט */}
@@ -29,7 +18,7 @@ const Navbar = ({ navigate, onLogout, user, loginTime }) => {
         {user && (
           <div style={{ fontSize: "0.9rem", textAlign: "right" }}>
             {user.name} <br />
-            התחברות אחרונה: {formatNextLoginTime()}
+            התחברות אחרונה: {formatLastLoginTime(loginTime)}
           </div>
         )}
         {onLogout && <StyledNavBtn onClick={onLogout}>התנתק</StyledNavBtn>}

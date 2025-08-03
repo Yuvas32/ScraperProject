@@ -21,7 +21,10 @@ const LoginPage = ({ onLogin }) => {
         return;
       }
 
-      // התחברות הצליחה
+      // ✅ שמירת המשתמש כולל role ב-localStorage
+      localStorage.setItem("user", JSON.stringify(data));
+
+      // ✅ העברת המשתמש ל-App
       onLogin(data);
     } catch (err) {
       console.error("❌ Login error:", err);
@@ -44,7 +47,7 @@ const LoginPage = ({ onLogin }) => {
         <br />
         <input
           type="text"
-          placeholder="Password = Your name"
+          placeholder="Password = Your full name"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required

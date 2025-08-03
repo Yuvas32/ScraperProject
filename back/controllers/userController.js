@@ -1,6 +1,6 @@
 const db = require("../config/db");
 
-// GET all users
+// ✅ Get all users
 exports.getAllUsers = (req, res) => {
   db.query("SELECT * FROM users", (err, results) => {
     if (err) return res.status(500).json({ error: err });
@@ -8,12 +8,12 @@ exports.getAllUsers = (req, res) => {
   });
 };
 
-// ADD new worker
+// ✅ Create new user
 exports.createUser = (req, res) => {
-  const { name, email, active } = req.body;
-  const sql = `INSERT INTO users (name, email, active) VALUES (?, ?, ?)`;
+  const { name, email, active = true, role = "user" } = req.body;
+  const sql = `INSERT INTO users (name, email, active, role) VALUES (?, ?, ?, ?)`;
 
-  db.query(sql, [name, email, active], (err, result) => {
+  db.query(sql, [name, email, active, role], (err, result) => {
     if (err) {
       console.error("❌ MySQL INSERT error:", err);
       return res.status(500).json({ error: err });
@@ -25,12 +25,12 @@ exports.createUser = (req, res) => {
         console.error("❌ MySQL FETCH error:", err2);
         return res.status(500).json({ error: err2 });
       }
-      res.json(rows[0]); // ✅ Return full row including created_at
+      res.json(rows[0]);
     });
   });
 };
 
-// DELETE user by ID
+// ✅ Delete user
 exports.deleteUser = (req, res) => {
   const userId = req.params.id;
   const sql = `DELETE FROM users WHERE id = ?`;
@@ -44,11 +44,9 @@ exports.deleteUser = (req, res) => {
   });
 };
 
-// UPDATE USER BY ID
+// ✅ Update user
 exports.updateUser = (req, res) => {
   const id = req.params.id;
-
-  // עותק ללא created_at
   const updatedData = { ...req.body };
   delete updatedData.created_at;
 
@@ -73,7 +71,7 @@ exports.updateUser = (req, res) => {
   });
 };
 
-// LOGIN user by email + "name" as password
+// ✅ Login user by email + "name" as password, only if active
 exports.loginUser = (req, res) => {
   const { email, password } = req.body;
 
@@ -91,6 +89,16 @@ exports.loginUser = (req, res) => {
       return res.status(403).json({ error: "Incorrect password" });
     }
 
-    res.json({ id: user.id, name: user.name, email: user.email });
+    if (!user.active) {
+      return res.status(403).json({ error: "User is inactive" });
+    }
+
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      active: user.active,
+    });
   });
 };
