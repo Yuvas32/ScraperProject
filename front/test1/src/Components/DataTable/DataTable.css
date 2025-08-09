@@ -140,3 +140,14 @@
   margin-bottom: 6px;
   font-weight: bold;
 }
+
+.input-error {
+  border: 2px solid red;
+  outline: none;
+}
+
+.error-text {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
