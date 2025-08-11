@@ -9,14 +9,7 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const YTDLP = path.join(__dirname, "..", "bin", "yt-dlp.exe");
 
-/* ------------------------------------------------------------------ *
- * Filename / header helpers                                           *
- * ------------------------------------------------------------------ */
-
-/**
- * Minimal HTML entity decoder for titles coming from pages (e.g., &#x27;).
- * We only decode the common ones we actually see in titles.
- */
+/* ---------- helpers (same as you already have) ---------- */
 const decodeEntities = (s = "") =>
   s
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
@@ -29,30 +22,42 @@ const decodeEntities = (s = "") =>
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">");
 
-/** Strip filesystem-illegal characters, collapse spaces, trim. */
 const sanitizeBaseName = (s) =>
   (s || "video")
     .replace(/[\\/:*?"<>|]+/g, "_")
     .replace(/\s+/g, " ")
     .trim();
 
-/** ASCII fallback for header (Node requires Latin‑1). */
 const toAsciiFilename = (s) =>
   sanitizeBaseName(s)
     .normalize("NFKD")
-    .replace(/[^\x20-\x7E]/g, "_") // non-ASCII → _
-    .replace(/"/g, "'") // quotes can break header
+    .replace(/[^\x20-\x7E]/g, "_")
+    .replace(/"/g, "'")
     .slice(0, 100);
 
-/** RFC 5987 percent-encoding for filename* (UTF‑8). */
 const encodeRFC5987 = (str) =>
   encodeURIComponent(str)
     .replace(/['()]/g, escape)
     .replace(/\*/g, "%2A")
     .replace(/%(7C|60|5E)/g, (m, hex) => `%${hex.toLowerCase()}`);
 
-/** Keep an extra filesystem-safe name for logs or local temp files if ever needed. */
-const safeFileName = (s) => sanitizeBaseName(s).slice(0, 100);
+const buildYtArgs = (url, { useCookies = false } = {}) => {
+  const extra = [
+    "--referer",
+    url,
+    "--add-header",
+    "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+  ];
+  try {
+    const host = new URL(url).hostname;
+    if (host.includes("foxsports.com")) {
+      extra.push("--geo-bypass-country", "US");
+      extra.push("--add-header", "Origin:https://www.foxsports.com");
+    }
+  } catch {}
+  if (useCookies) extra.push("--cookies-from-browser", "edge"); // or "chrome"
+  return extra;
+};
 
 /* ------------------------------------------------------------------ *
  * Download                                                            *
@@ -70,93 +75,6 @@ const safeFileName = (s) => sanitizeBaseName(s).slice(0, 100);
  *   This prevents "Invalid character in header content".
  * - If ffmpeg is missing, yt-dlp may still produce a progressive MP4.
  */
-export const downloadVideo = async (req, res) => {
-  try {
-    const { url, title } = req.body || {};
-    if (!url)
-      return res.status(400).json({ ok: false, error: "url is required" });
-    if (!fs.existsSync(YTDLP))
-      return res.status(500).json({ ok: false, error: "yt-dlp.exe not found" });
-
-    // Build a safe + internationalized filename
-    const rawTitle = decodeEntities(title || "video");
-    const baseName = sanitizeBaseName(rawTitle) || "video";
-    const asciiName = toAsciiFilename(baseName) || "video";
-    const utf8Star = encodeRFC5987(`${baseName}.mp4`);
-
-    // Headers: ASCII fallback + UTF-8 filename*
-    res.setHeader("Content-Type", "video/mp4");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${asciiName}.mp4"; filename*=UTF-8''${utf8Star}`
-    );
-
-    // Try best video+audio merged to MP4; if ffmpeg missing, we still stream what we get
-    const args = [
-      "-f",
-      "bv*+ba/best",
-      "--merge-output-format",
-      "mp4",
-      "--no-part",
-      "--no-warnings",
-      "--quiet",
-      "--referer",
-      url,
-      "--add-header",
-      "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-      "-o",
-      "-", // stream to stdout
-      url,
-    ];
-
-    let started = false;
-    let stderr = "";
-
-    const child = spawn(YTDLP, args, { windowsHide: true });
-    const onAbort = () => {
-      try {
-        child.kill("SIGKILL");
-      } catch {}
-    };
-    req.on("close", onAbort);
-
-    child.stdout.on("data", (chunk) => {
-      started = true;
-      res.write(chunk);
-    });
-
-    child.stderr.on("data", (b) => {
-      stderr += b.toString();
-    });
-
-    child.on("error", (err) => {
-      req.off("close", onAbort);
-      if (!res.headersSent)
-        return res
-          .status(502)
-          .json({ ok: false, error: `yt-dlp spawn error: ${err.message}` });
-      res.end();
-    });
-
-    child.on("close", (code) => {
-      req.off("close", onAbort);
-      if (code === 0) return res.end();
-
-      // If we haven't streamed yet, map error to JSON
-      const msg = stderr || `yt-dlp exited ${code}`;
-      if (!res.headersSent || !started) {
-        return res.status(502).json({ ok: false, error: msg });
-      }
-      res.end();
-    });
-  } catch (e) {
-    if (!res.headersSent) {
-      res.status(500).json({ ok: false, error: String(e.message || e) });
-    } else {
-      res.end();
-    }
-  }
-};
 
 /* ------------------------------------------------------------------ *
  * Metadata & DB                                                       *
@@ -183,6 +101,134 @@ const toMeta = (url, info) => ({
   fps: info.fps ?? null,
   format: info.format ?? null,
 });
+
+/* ---------- NEW: robust streaming with fallbacks ---------- */
+export const downloadVideo = async (req, res) => {
+  const {
+    url,
+    title,
+    useCookies = false,
+    timeoutMs = 120_000,
+  } = req.body || {};
+  if (!url)
+    return res.status(400).json({ ok: false, error: "url is required" });
+  if (!fs.existsSync(YTDLP))
+    return res.status(500).json({ ok: false, error: "yt-dlp.exe not found" });
+
+  const rawTitle = decodeEntities(title || "video");
+  const baseName = sanitizeBaseName(rawTitle) || "video";
+  const asciiName = toAsciiFilename(baseName) || "video";
+  const utf8Star = encodeRFC5987(`${baseName}.mp4`);
+
+  // We’ll set headers only after we see the first stdout chunk
+  const writeHeaders = () => {
+    if (res.headersSent) return;
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${asciiName}.mp4"; filename*=UTF-8''${utf8Star}`
+    );
+  };
+
+  // Attempts in order:
+  // 1) Mux best video+audio to MP4 (needs ffmpeg, but fine if already progressive)
+  // 2) Prefer progressive MP4, else best MP4
+  // 3) Generic best (any container) as last resort
+  const common = ["--no-part", "--no-warnings", "--quiet"];
+  const site = buildYtArgs(url, { useCookies });
+
+  const attempts = [
+    ["-f", "bv*+ba/best", "--merge-output-format", "mp4", ...common, ...site],
+    [
+      "-f",
+      "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+      ...common,
+      ...site,
+    ],
+    ["-f", "best", ...common, ...site],
+  ];
+
+  const errors = [];
+
+  // Run one attempt. If it starts streaming, we consider it final (no more fallbacks).
+  const tryOnce = (args) =>
+    new Promise((resolve) => {
+      let started = false;
+      let stderr = "";
+      const child = spawn(YTDLP, [...args, "-o", "-", url], {
+        windowsHide: true,
+      });
+
+      const killer = setTimeout(() => {
+        try {
+          child.kill("SIGKILL");
+        } catch {}
+      }, timeoutMs);
+
+      const onAbort = () => {
+        try {
+          child.kill("SIGKILL");
+        } catch {}
+      };
+      req.once("close", onAbort);
+
+      child.stdout.on("data", (chunk) => {
+        if (!started) {
+          started = true;
+          writeHeaders();
+        }
+        res.write(chunk);
+      });
+
+      child.stderr.on("data", (b) => {
+        stderr += b.toString();
+      });
+
+      child.on("error", (err) => {
+        clearTimeout(killer);
+        req.off("close", onAbort);
+        if (!started) {
+          errors.push(`spawn error: ${err.message}`);
+          return resolve({ started: false, code: 1 });
+        }
+        // If we had started streaming, we can only end the response.
+        return resolve({ started: true, code: 1 });
+      });
+
+      child.on("close", (code) => {
+        clearTimeout(killer);
+        req.off("close", onAbort);
+        if (code === 0) {
+          if (started) res.end();
+          return resolve({ started, code: 0 });
+        }
+        // Non-zero exit
+        if (!started) errors.push(stderr || `yt-dlp exited ${code}`);
+        else res.end(); // if streaming had begun, just end the body
+        return resolve({ started, code });
+      });
+    });
+
+  // Try attempts in sequence until one starts streaming or succeeds
+  for (let i = 0; i < attempts.length; i++) {
+    const { started, code } = await tryOnce(attempts[i]);
+    if (started || code === 0) return; // success (streaming or finished cleanly)
+    // else: no bytes were sent → we can try next
+  }
+
+  // If we got here, nothing streamed; return a useful JSON error
+  const all = errors.join("\n");
+  if (/HTTP Error 4(03|04)|geo|not available in your location|FOX/i.test(all)) {
+    return res.status(451).json({
+      ok: false,
+      error:
+        "This video appears geo‑restricted or requires authentication. Try enabling 'Use browser cookies' and make sure you can play it in your browser.",
+    });
+  }
+  return res
+    .status(502)
+    .json({ ok: false, error: all || "yt-dlp failed to start streaming" });
+};
 
 /**
  * Build a human-friendly summary + extraInfo line (for UI).
