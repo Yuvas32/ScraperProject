@@ -1,94 +1,116 @@
-const db = require("../config/db");
+// back/controllers/userController.js
+import db from "../config/db.js";
 
-// ✅ Get all users
-exports.getAllUsers = (req, res) => {
-  db.query("SELECT * FROM users", (err, results) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json(results);
-  });
+/**
+ * GET /users
+ * Return all users.
+ */
+export const getAllUsers = async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM users");
+    res.json(rows);
+  } catch (err) {
+    console.error("getAllUsers error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 };
 
-// ✅ Create new user
-exports.createUser = (req, res) => {
-  const { name, email, active = true, role = "user" } = req.body;
-  const sql = `INSERT INTO users (name, email, active, role) VALUES (?, ?, ?, ?)`;
-
-  db.query(sql, [name, email, active, role], (err, result) => {
-    if (err) {
-      console.error("❌ MySQL INSERT error:", err);
-      return res.status(500).json({ error: err });
+/**
+ * POST /users
+ * Body: { name, email, active=true, role="user" }
+ */
+export const createUser = async (req, res) => {
+  try {
+    const { name, email, active = true, role = "user" } = req.body || {};
+    if (!name || !email) {
+      return res.status(400).json({ error: "name and email are required" });
     }
 
-    const getSql = `SELECT * FROM users WHERE id = ?`;
-    db.query(getSql, [result.insertId], (err2, rows) => {
-      if (err2) {
-        console.error("❌ MySQL FETCH error:", err2);
-        return res.status(500).json({ error: err2 });
-      }
-      res.json(rows[0]);
-    });
-  });
+    const sql =
+      "INSERT INTO users (name, email, active, role) VALUES (?, ?, ?, ?)";
+    const [result] = await db.execute(sql, [name, email, !!active, role]);
+
+    const [rows] = await db.execute("SELECT * FROM users WHERE id = ?", [
+      result.insertId,
+    ]);
+    res.json(rows[0] || null);
+  } catch (err) {
+    console.error("createUser error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 };
 
-// ✅ Delete user
-exports.deleteUser = (req, res) => {
-  const userId = req.params.id;
-  const sql = `DELETE FROM users WHERE id = ?`;
-
-  db.query(sql, [userId], (err, result) => {
-    if (err) {
-      console.error("❌ MySQL DELETE error:", err);
-      return res.status(500).json({ error: "Failed to delete user" });
+/**
+ * DELETE /users/:id
+ */
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await db.execute("DELETE FROM users WHERE id = ?", [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "User not found" });
     }
     res.json({ message: "User deleted successfully" });
-  });
+  } catch (err) {
+    console.error("deleteUser error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 };
 
-// ✅ Update user
-exports.updateUser = (req, res) => {
-  const id = req.params.id;
-  const updatedData = { ...req.body };
-  delete updatedData.created_at;
+/**
+ * PUT /users/:id
+ * Body: any updatable fields (name, email, active, role)
+ */
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = { ...req.body };
+    delete updated.created_at;
 
-  const fields = Object.keys(updatedData)
-    .map((key) => `${key} = ?`)
-    .join(", ");
-  const values = Object.values(updatedData);
-
-  const sql = `UPDATE users SET ${fields} WHERE id = ?`;
-
-  db.query(sql, [...values, id], (err, result) => {
-    if (err) {
-      console.error("Error updating user:", err);
-      return res.status(500).json({ error: "Failed to update user" });
+    const keys = Object.keys(updated);
+    if (keys.length === 0) {
+      return res.status(400).json({ error: "No fields to update" });
     }
+
+    const sets = keys.map((k) => `${k} = ?`).join(", ");
+    const values = keys.map((k) => updated[k]);
+
+    const sql = `UPDATE users SET ${sets} WHERE id = ?`;
+    const [result] = await db.execute(sql, [...values, id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "User not found" });
     }
-
-    res.status(200).json({ message: "User updated successfully" });
-  });
+    res.json({ message: "User updated successfully" });
+  } catch (err) {
+    console.error("updateUser error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 };
 
-// ✅ Login user by email + "name" as password, only if active
-exports.loginUser = (req, res) => {
-  const { email, password } = req.body;
+/**
+ * POST /users/login
+ * Body: { email, password }
+ * NOTE: Demo logic — password must equal the 'name' field and user must be active.
+ */
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ error: "email and password are required" });
+    }
 
-  const sql = "SELECT * FROM users WHERE email = ?";
-  db.query(sql, [email], (err, results) => {
-    if (err) return res.status(500).json({ error: "Database error" });
-
-    if (results.length === 0) {
+    const [rows] = await db.execute("SELECT * FROM users WHERE email = ?", [
+      email,
+    ]);
+    if (rows.length === 0) {
       return res.status(401).json({ error: "User not found" });
     }
 
-    const user = results[0];
-
+    const user = rows[0];
     if (user.name !== password) {
       return res.status(403).json({ error: "Incorrect password" });
     }
-
     if (!user.active) {
       return res.status(403).json({ error: "User is inactive" });
     }
@@ -100,5 +122,8 @@ exports.loginUser = (req, res) => {
       role: user.role,
       active: user.active,
     });
-  });
+  } catch (err) {
+    console.error("loginUser error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 };
