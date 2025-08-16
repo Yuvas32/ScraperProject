@@ -8,7 +8,6 @@ const Navbar = ({ navigate, onLogout, user, loginTime }) => {
       <div>
         <StyledNavBtn onClick={() => navigate("home")}>Home</StyledNavBtn>
         <StyledNavBtn onClick={() => navigate("users")}>Users</StyledNavBtn>
-        <StyledNavBtn onClick={() => navigate("scraper")}>Scraper</StyledNavBtn>
       </div>
 
       {/* אמצע – ברכת שלום */}

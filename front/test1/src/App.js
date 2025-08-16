@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { HomePage, UsersPage, LoginPage, ScraperPage } from "./pages";
-import { Navbar, Footer } from "./components";
+import { HomePage, UsersPage, LoginPage } from "./pages";
+import { Footer, Navbar } from "./components";
 
 const App = () => {
   const [page, setPage] = useState("home");
@@ -63,7 +63,6 @@ const App = () => {
       />
       {page === "home" && <HomePage />}
       {page === "users" && <UsersPage />}
-      {page === "scraper" && <ScraperPage />}
       <Footer />
     </>
   );
