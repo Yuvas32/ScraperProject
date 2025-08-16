@@ -39,10 +39,21 @@ const UsersPage = () => {
 
   const refreshUsers = () =>
     fetchUsers()
-      .then(setUsers)
+      .then((list) => {
+        setUsers(list); // update page state
+        return list; // <-- return to DataTable so it can setTableData(list)
+      })
       .catch((err) => console.error("Failed to refresh after add:", err));
 
   const isAdmin = currentUser?.role === "admin";
+
+  // Format values only in the exported files (not on-screen)
+  const exportUserRow = (u) => ({
+    ...u,
+    active: u.active ? "פעיל" : "לא פעיל",
+    // example date prettifier (if your created_at is ISO):
+    // created_at: new Date(u.created_at).toLocaleDateString('he-IL'),
+  });
 
   return (
     <>
@@ -54,6 +65,9 @@ const UsersPage = () => {
         add={isAdmin ? addUser : null}
         deleteItem={isAdmin}
         edit={isAdmin}
+        exportable
+        exportFileBase="users" // file base name: users.csv / users.xlsx
+        exportTransform={exportUserRow} // optional: formats only the exported data
       />
 
       {!isAdmin && (

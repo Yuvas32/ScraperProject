@@ -10,6 +10,9 @@ import DataTableForm from "./DataTableForm";
 import { validateAll, validateField } from "../../utils/validators";
 import { formatValue } from "./functions";
 
+// ⬅ ADD: import the exporters
+import { exportCSV, exportXLSX, safeName } from "../../utils/exporters";
+
 const DataTable = ({
   data = [],
   title = "Data Table",
@@ -18,6 +21,11 @@ const DataTable = ({
   deleteItem = null,
   refresh = null,
   tableName,
+
+  // ⬅ NEW optional props (all generic)
+  exportable = true,
+  exportFileBase,
+  exportTransform, // (row) => row  // optional mapper only for exported data
 }) => {
   const [tableData, setTableData] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -114,33 +122,72 @@ const DataTable = ({
     }
   };
 
+  // ⬅ EXPORT: compute columns & file name
+  const columns =
+    tableData && tableData.length ? Object.keys(tableData[0]) : [];
+  const fileBase = safeName(exportFileBase || title || tableName || "export");
+
+  // ⬅ EXPORT: data mapping used only for files (keeps on-screen formatting unchanged)
+  const exportData = useMemo(() => {
+    if (!exportTransform) return tableData || [];
+    return Array.isArray(tableData)
+      ? tableData.map(exportTransform)
+      : tableData;
+  }, [tableData, exportTransform]);
+
+  const handleExportCSV = () => {
+    if (!columns.length || !exportable) return;
+    // columns as strings is fine; utils will preserve order
+    exportCSV(exportData, columns, `${fileBase}.csv`);
+  };
+
+  const handleExportXLSX = () => {
+    if (!columns.length || !exportable) return;
+    exportXLSX(exportData, columns, `${fileBase}.xlsx`);
+  };
+
   if (!tableData || tableData.length === 0) {
     return (
       <div className="wrapper">
+        {/* header */}
         <div className="header-row">
-          {refresh && (
-            <button className="small-button" onClick={handleRefresh}>
-              🔄
-            </button>
-          )}
           <h2 className="title">{title}</h2>
+
+          <div className="toolbar">
+            {typeof refresh === "function" && (
+              <button
+                className="small-button"
+                onClick={handleRefresh}
+                title="רענן"
+              >
+                🔄 רענן
+              </button>
+            )}
+          </div>
         </div>
+
         <p className="loading-text">Loading...</p>
       </div>
     );
   }
 
-  const columns = Object.keys(tableData[0]);
-
   return (
     <div className="wrapper">
+      {/* header */}
       <div className="header-row">
-        {refresh && (
-          <button className="small-button" onClick={handleRefresh}>
-            🔄
-          </button>
-        )}
         <h2 className="title">{title}</h2>
+
+        <div className="toolbar">
+          {typeof refresh === "function" && (
+            <button
+              className="small-button refresh-btn"
+              onClick={handleRefresh}
+              title="רענן"
+            >
+              🔄
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="container">
@@ -193,6 +240,16 @@ const DataTable = ({
           </tbody>
         </table>
       </div>
+      {exportable && (
+        <div className="export-bar">
+          <button className="excel-button" onClick={handleExportCSV}>
+            📊 CSV
+          </button>
+          <button className="excel-button" onClick={handleExportXLSX}>
+            📊 XLSX
+          </button>
+        </div>
+      )}
 
       {add && (
         <button className="button" onClick={handleAddClick}>

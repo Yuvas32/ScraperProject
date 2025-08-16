@@ -4,8 +4,11 @@
 }
 
 .header-row {
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* כותרת באמצע */
   margin-bottom: 16px;
+  position: relative;
   height: 40px;
 }
 
@@ -13,7 +16,12 @@
   font-size: 1.5rem;
   font-weight: bold;
   margin: 0;
-  text-align: center;
+}
+
+.refresh-btn {
+  position: absolute;
+  left: 0; /* בצד שמאל למעלה */
+  top: 0;
 }
 
 .loading-text {
@@ -63,6 +71,8 @@
   font-weight: bold;
 }
 
+/* --- Buttons --- */
+
 .button {
   margin-top: 20px;
   padding: 10px 16px;
@@ -99,9 +109,9 @@
 }
 
 .small-button {
-  position: absolute;
-  left: 0;
-  top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 6px 10px;
   font-size: 13px;
   font-weight: bold;
@@ -110,7 +120,13 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  line-height: 1;
+  width: auto;
+  height: auto;
+  margin-left: 6px;
 }
+
+/* --- Form --- */
 
 .form-view {
   margin-top: 20px;
@@ -150,4 +166,30 @@
   color: red;
   font-size: 0.85rem;
   margin-top: 4px;
+}
+/* פס כפתורי ייצוא בצד שמאל למטה */
+.export-bar {
+  display: flex;
+  justify-content: flex-start; /* שמאל */
+  margin-top: 12px;
+  gap: 8px;
+}
+
+.excel-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: bold;
+  background-color: #217346; /* ירוק אקסל */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.excel-button:hover {
+  background-color: #1a5c36;
 }
