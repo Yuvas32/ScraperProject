@@ -1,1 +1,5 @@
-export { fetchUsers, fetchWelcomeMessage } from "./appFunctions";
+export {
+  fetchUsers,
+  fetchWelcomeMessage,
+  fetchUsersByStatus,
+} from "./appFunctions";

@@ -1,5 +1,17 @@
 const preURL = "http://localhost:3001";
 
+// Fetch active and inactive users separately
+export const fetchUsersByStatus = async () => {
+  const res = await fetch(`${preURL}/users`);
+  if (!res.ok) throw new Error("Failed to fetch users");
+
+  const users = await res.json();
+  const active = users.filter((u) => u.active);
+  const inactive = users.filter((u) => !u.active);
+
+  return { active, inactive };
+};
+
 export const fetchUsers = async () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
