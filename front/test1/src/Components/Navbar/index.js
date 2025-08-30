@@ -10,18 +10,16 @@ const Navbar = ({ navigate, onLogout, user, loginTime }) => {
         <StyledNavBtn onClick={() => navigate("users")}>Users</StyledNavBtn>
       </div>
 
-      {/* אמצע – ברכת שלום */}
-      <Dashboard />
-
       {/* צד ימין – שם + תאריך התחברות אחרונה + התנתק */}
       <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
         {user && (
           <div style={{ fontSize: "0.9rem", textAlign: "right" }}>
+            <Dashboard />
             {user.name} <br />
+            {onLogout && <StyledNavBtn onClick={onLogout}>התנתק</StyledNavBtn>}
             התחברות אחרונה: {formatLastLoginTime(loginTime)}
           </div>
         )}
-        {onLogout && <StyledNavBtn onClick={onLogout}>התנתק</StyledNavBtn>}
       </div>
     </NavbarWithStyle>
   );
