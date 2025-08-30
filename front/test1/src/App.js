@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { HomePage, UsersPage, LoginPage } from "./pages";
+import { HomePage, UsersPage, LoginPage, GraphsPage } from "./pages";
 import { Footer, Navbar } from "./components";
 
 const App = () => {
@@ -63,6 +63,7 @@ const App = () => {
       />
       {page === "home" && <HomePage />}
       {page === "users" && <UsersPage />}
+      {page === "graphs" && <GraphsPage />}
       <Footer />
     </>
   );

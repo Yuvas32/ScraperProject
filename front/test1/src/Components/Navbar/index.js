@@ -8,6 +8,7 @@ const Navbar = ({ navigate, onLogout, user, loginTime }) => {
       <div>
         <StyledNavBtn onClick={() => navigate("home")}>Home</StyledNavBtn>
         <StyledNavBtn onClick={() => navigate("users")}>Users</StyledNavBtn>
+        <StyledNavBtn onClick={() => navigate("graphs")}>Graphs</StyledNavBtn>
       </div>
 
       {/* צד ימין – שם + תאריך התחברות אחרונה + התנתק */}

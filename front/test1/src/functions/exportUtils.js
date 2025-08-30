@@ -1,25 +1,3 @@
-// Build a stable export row from a meta object
-export const buildExportRow = (meta = {}) => {
-  const arrOrNull = (a) => (Array.isArray(a) && a.length ? a.join("; ") : null);
-
-  return {
-    source_url: meta.source_url ?? null,
-    title: meta.title ?? null,
-    uploader: meta.uploader ?? null,
-    upload_date: meta.upload_date ?? null, // YYYYMMDD
-    duration_seconds: Number.isFinite(meta.duration) ? meta.duration : 0,
-    categories: arrOrNull(meta.categories),
-    tags: arrOrNull(meta.tags),
-    view_count: meta.view_count ?? null,
-    like_count: meta.like_count ?? null,
-    width: meta.width ?? null,
-    height: meta.height ?? null,
-    fps: meta.fps ?? null,
-    format: meta.format ?? null,
-    webpage_url: meta.webpage_url ?? null,
-  };
-};
-
 // Convert rows → CSV text with a UTF‑8 BOM (Excel-friendly)
 export const rowsToCSV = (rows, headers) => {
   const toCell = (v) => {
