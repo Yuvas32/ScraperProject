@@ -1,9 +1,23 @@
 const preURL = "http://localhost:3001";
 
-// Fetch active and inactive users separately
+/**
+ * שולף את כל המשתמשים ומחלק אותם לרשימות של פעילים ולא פעילים.
+ *
+ * @async
+ * @function fetchUsersByStatus
+ * @returns {Promise<{active: Array<User>, inactive: Array<User>}>}
+ *          active   - מערך משתמשים שהשדה active שלהם true
+ *          inactive - מערך משתמשים שהשדה active שלהם false
+ *
+ * @throws {Error} אם הבקשה נכשלה או שהשרת החזיר שגיאה.
+ *
+ * @example
+ * const { active, inactive } = await fetchUsersByStatus();
+ * console.log("פעילים:", active.length, "לא פעילים:", inactive.length);
+ */
 export const fetchUsersByStatus = async () => {
   const res = await fetch(`${preURL}/users`);
-  if (!res.ok) throw new Error("Failed to fetch users");
+  if (!res.ok) throw new Error("שגיאה בשליפת משתמשים");
 
   const users = await res.json();
   const active = users.filter((u) => u.active);
@@ -12,6 +26,19 @@ export const fetchUsersByStatus = async () => {
   return { active, inactive };
 };
 
+/**
+ * שולף את כל המשתמשים מהשרת, עם כותרת (header) של role אם נשמר ב־localStorage.
+ *
+ * @async
+ * @function fetchUsers
+ * @returns {Promise<Array<User>>} מערך של אובייקטי משתמש
+ *
+ * @throws {Error} אם הבקשה נכשלה או שהשרת החזיר שגיאה.
+ *
+ * @example
+ * const users = await fetchUsers();
+ * console.log("סה״כ משתמשים:", users.length);
+ */
 export const fetchUsers = async () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -21,78 +48,35 @@ export const fetchUsers = async () => {
     },
   });
 
-  if (!res.ok) throw new Error("Failed to fetch users");
+  if (!res.ok) throw new Error("שגיאה בשליפת משתמשים");
   return await res.json();
 };
 
+/**
+ * שולף הודעת ברוך הבא/בדיקה מהשרת.
+ *
+ * @async
+ * @function fetchWelcomeMessage
+ * @returns {Promise<string>} מחרוזת עם הודעת ברוך הבא
+ *
+ * @throws {Error} אם הבקשה נכשלה או שהשרת החזיר שגיאה.
+ *
+ * @example
+ * const message = await fetchWelcomeMessage();
+ * console.log(message); // למשל: "ברוך הבא למערכת!"
+ */
 export const fetchWelcomeMessage = async () => {
   const res = await fetch(`${preURL}/test`);
-  if (!res.ok) throw new Error("Failed to fetch welcome message");
+  if (!res.ok) throw new Error("שגיאה בשליפת הודעת ברוך הבא");
   const data = await res.json();
   return data.message;
 };
 
-// front/src/functions/appFunctions.js
-
-// Fetch video metadata from backend
-export const fetchVideoMeta = async (url) => {
-  const res = await fetch("http://localhost:3001/scrape/meta", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
-  });
-  const data = await res.json();
-  if (!res.ok || !data.ok) {
-    throw new Error(data.error || "Failed to fetch metadata");
-  }
-  return data.meta;
-};
-
-// Save video metadata to database via backend
-export const saveVideoMeta = async (url) => {
-  const res = await fetch("http://localhost:3001/scrape/save", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
-  });
-  const data = await res.json();
-  if (!res.ok || !data.ok) {
-    throw new Error(data.error || "Failed to save video");
-  }
-  return data;
-};
-
-// Fetch list of saved videos from backend
-export const fetchSavedVideos = async (limit = 50) => {
-  const res = await fetch(`${preURL}/scrape/videos?limit=${limit}`);
-  const ct = res.headers.get("content-type") || "";
-
-  let data;
-  if (ct.includes("application/json")) {
-    data = await res.json();
-  } else {
-    const text = await res.text(); // HTML or plain text
-    throw new Error(
-      `Unexpected response (HTTP ${res.status}). Body: ${text.slice(0, 200)}`
-    );
-  }
-
-  if (!res.ok || data?.ok === false) {
-    throw new Error(data?.error || `Fetch failed (HTTP ${res.status})`);
-  }
-  return data.rows || [];
-};
-
-// Download video file from backend
-export const downloadVideoBlob = async ({ url, title }) => {
-  const res = await fetch("http://localhost:3001/scrape/download", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url, title }),
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Download failed: ${errText}`);
-  }
-  return await res.blob();
-};
+/**
+ * @typedef {Object} User
+ * @property {number|string} id     מזהה ייחודי של המשתמש
+ * @property {string} name          שם המשתמש
+ * @property {string} [role]        תפקיד המשתמש (לא חובה)
+ * @property {boolean} active       האם המשתמש פעיל
+ * @property {string} [created_at]  תאריך יצירה בפורמט ISO
+ */
